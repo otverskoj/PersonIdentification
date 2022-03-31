@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
+from src.person_detector import PersonDetector
 
 
 def main(input_video_path: str,
          output_video_path: str) -> None:
     video_capture = cv2.VideoCapture(input_video_path)
 
-    # person_detector = PersonDetector()
+    person_detector = PersonDetector()
     # person_embedderer = PersonEmbedderer()
     # embedding_storage = EmbeddingStorage()
 
@@ -23,9 +24,13 @@ def main(input_video_path: str,
         ret, frame = video_capture.read()
         if not ret:
             break
-
-        # persons = person_detector.detect(frame)
-        # person_embeddings = person_embedderer.embed(persons)
+        
+        resized_rgb_frame = cv2.cvtColor(
+            cv2.resize(frame, out_resolution),
+            cv2.COLOR_BGR2RGB
+        )
+        person_bboxes = person_detector.detect_persons(resized_rgb_frame)
+        # person_embeddings = person_embedderer.embed(person_bboxes)
 
         # stored_person_embeddings = embedding_storage.person_embeddings()
         # similarity_matrix = LinalgUtils.count_similarity(stored_person_embeddings,
@@ -54,9 +59,15 @@ def main(input_video_path: str,
         #         'content': f'Total persons: {person_counter}'
         #     }
         # )
-        # frame_to_write = DrawUtils.draw(data, frame[:])
+        # frame_to_write = DrawUtils.draw(data, resized_rgb_frame[:])
 
-        frame_to_write = cv2.resize(frame, out_resolution)
+        frame_to_write = cv2.cvtColor(resized_rgb_frame,
+                                      cv2.COLOR_RGB2BGR)
+        for bbox in person_bboxes:
+            x, y, w, h = list(map(int, bbox))
+            frame_to_write = cv2.rectangle(frame_to_write, 
+                                           (x, y), (x + w, y + h), 
+                                           (0, 255, 0), 2)
         if frames_counter % 125 == 0:
             print(frames_counter)
         writer.write(frame_to_write)
