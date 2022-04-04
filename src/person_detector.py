@@ -32,8 +32,8 @@ class PersonDetector:
 
         height, width = image.shape[:2]
 
-        blob = cv2.dnn.blobFromImage(cv2.resize(image, (yolov5_dim, yolov5_dim)), 
-                                     1 / 255.0, (yolov5_dim, yolov5_dim))        
+        blob = cv2.dnn.blobFromImage(image, 1 / 255, (yolov5_dim, yolov5_dim),
+                                     swapRB=True)
         self.model.setInput(blob)
         predictions = self.model.forward()
         output = predictions[0]
@@ -67,6 +67,7 @@ class PersonDetector:
                                    self.confidence_threshold, 
                                    self.nms_thershold)
 
+        bboxes = np.take(bboxes, indices, axis=0)
         return np.array(
-            [bboxes[i] for i in indices]
+            [(x, y, x + w, y + h) for x, y, w, h in bboxes]
         )
