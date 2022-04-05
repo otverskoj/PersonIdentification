@@ -27,7 +27,7 @@ def main(input_video_path: str,
             break
         
         person_bboxes = person_detector.detect_persons(frame)
-        # person_embeddings = person_embedder.embed(person_bboxes)
+        person_embeddings = person_embedder.embed_persons(frame, person_bboxes)
 
         # stored_person_embeddings = embedding_storage.person_embeddings()
         # similarity_matrix = LinalgUtils.count_similarity(stored_person_embeddings,
