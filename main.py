@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from src.person_detector import PersonDetector
 from src.person_embedder import PersonEmbedder
+from src.embedding_storage import EmbeddingStorage
 
 
 def main(input_video_path: str,
@@ -10,7 +11,7 @@ def main(input_video_path: str,
 
     person_detector = PersonDetector()
     person_embedder = PersonEmbedder()
-    # embedding_storage = EmbeddingStorage()
+    embedding_storage = EmbeddingStorage()
 
     person_counter, frames_counter = 0, 0
 
@@ -23,46 +24,31 @@ def main(input_video_path: str,
 
     while True:
         ret, frame = video_capture.read()
-        if not ret:
+        if not ret or frames_counter == 500:
             break
         
         person_bboxes = person_detector.detect_persons(frame)
         person_embeddings = person_embedder.embed_persons(frame, person_bboxes)
 
-        # stored_person_embeddings = embedding_storage.person_embeddings()
-        # similarity_matrix = LinalgUtils.count_similarity(stored_person_embeddings,
-        #                                                  person_embeddings,
-        #                                                  metric='cosine')
+        if len(embedding_storage) != 0:
+            _, indices = embedding_storage.filtered_search(person_embeddings, k=2, threshold=0.9)
+            embedding_storage.remove(indices[:, 0])
+            person_counter += person_embeddings.shape[0] - indices.shape[0]
         
-        # # ищем индексы строки значения, являющего максимумов в столбце
-        # indices_to_swap = LinalgUtils.swap_indices(similarity_matrix, 
-        #                                            metric='cosine')
-        # embedding_storage.update_embeddings(person_embeddings, indices_to_swap)
+        if len(embedding_storage) == 0:
+            person_counter += person_embeddings.shape[0]
         
-        # # индексы строк новых для нас людей
-        # indices_to_add = np.array(
-        #     filter(
-        #         lambda i: i not in indices_to_swap, 
-        #         range(person_embeddings.shape[1])
-        # ))
-        # embedding_storage.add_embeddings(person_embeddings)
-
-        # person_counter += indices_to_add.shape[0]
-
-        # data = tuple(
-        #     {
-        #         'type': 'text',
-        #         'coords': (),
-        #         'content': f'Total persons: {person_counter}'
-        #     }
-        # )
-        # frame_to_write = DrawUtils.draw(data, frame[:])
-        
-        # frame_to_write = cv2.resize(frame, out_resolution)
+        embedding_storage.add(person_embeddings)
+                
+        frame_to_write = cv2.resize(frame, out_resolution)
         for bbox in person_bboxes:
             frame_to_write = cv2.rectangle(frame,
                                            bbox[:2], bbox[2:],
                                            (0, 255, 0), 2)
+            frame_to_write = cv2.putText(frame_to_write,
+                                         f'Total persons: {person_counter}',
+                                         (100, 100), cv2.FONT_HERSHEY_SIMPLEX,
+                                         1, (0, 255, 0), 5)
         if frames_counter % 125 == 0:
             print(frames_counter)
         writer.write(frame_to_write)
