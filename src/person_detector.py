@@ -68,6 +68,7 @@ class PersonDetector:
                                    self.nms_thershold)
 
         bboxes = np.take(bboxes, indices, axis=0)
+        confidences = np.take(confidences, indices, axis=0)
         return np.array(
             [(x, y, x + w, y + h) for x, y, w, h in bboxes]
         )

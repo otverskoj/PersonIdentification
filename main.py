@@ -8,8 +8,9 @@ from src.embedding_storage import EmbeddingStorage
 def main(input_video_path: str,
          output_video_path: str) -> None:
     video_capture = cv2.VideoCapture(input_video_path)
+    total_frames = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    person_detector = PersonDetector()
+    person_detector = PersonDetector(confidence_threshold=0.55)
     person_embedder = PersonEmbedder()
     embedding_storage = EmbeddingStorage()
 
@@ -30,16 +31,15 @@ def main(input_video_path: str,
         person_bboxes = person_detector.detect_persons(frame)
         person_embeddings = person_embedder.embed_persons(frame, person_bboxes)
 
-        if len(embedding_storage) != 0:
-            _, indices = embedding_storage.filtered_search(person_embeddings, k=2, threshold=0.9)
+        if len(embedding_storage) == 0:
+            person_counter += person_embeddings.shape[0]
+        else:
+            _, indices = embedding_storage.filtered_search(person_embeddings, k=1, threshold=0.444)
             embedding_storage.remove(indices[:, 0])
             person_counter += person_embeddings.shape[0] - indices.shape[0]
         
-        if len(embedding_storage) == 0:
-            person_counter += person_embeddings.shape[0]
-        
         embedding_storage.add(person_embeddings)
-                
+        
         frame_to_write = cv2.resize(frame, out_resolution)
         for bbox in person_bboxes:
             frame_to_write = cv2.rectangle(frame,
@@ -49,10 +49,10 @@ def main(input_video_path: str,
                                          f'Total persons: {person_counter}',
                                          (100, 100), cv2.FONT_HERSHEY_SIMPLEX,
                                          1, (0, 255, 0), 5)
-        if frames_counter % 125 == 0:
-            print(frames_counter)
+
         writer.write(frame_to_write)
         frames_counter += 1
+        print(f'\rPersons: {person_counter}, complete: {100 * frames_counter / total_frames:.2f}%', end='')
 
 
 if __name__ == '__main__':
