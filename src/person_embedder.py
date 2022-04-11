@@ -1,6 +1,4 @@
 import os
-from turtle import resizemode
-from urllib import request
 import cv2
 import numpy as np
 from openvino.runtime import Core
