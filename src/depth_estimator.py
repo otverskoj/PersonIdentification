@@ -58,6 +58,6 @@ if __name__ == '__main__':
 
     print("OpenCV DNN prediction: \n")
     print("* shape: ", out.shape)
-    out = cv2.resize(out,(orig_w, orig_h))
+    out = cv2.resize(out, (orig_w, orig_h))
     plt.imshow(out)
     plt.show()
