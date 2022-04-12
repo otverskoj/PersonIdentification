@@ -55,6 +55,7 @@ if __name__ == '__main__':
     out = np.transpose(out, (1, 2, 0))
     out = out - np.min(out)
     out /= np.max(out)
+    out = 1 - out
 
     print("OpenCV DNN prediction: \n")
     print("* shape: ", out.shape)
